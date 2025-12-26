@@ -4,1326 +4,166 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>(활성,억제) → A, 그리고 전역 억제 C (WebGL2)</title>
-    <style>
-      html,
-      body {
-        margin: 0;
-        height: 100%;
-        background: #0b0b0f;
-        color: #ddd;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      }
-      body {
-        display: grid;
-        grid-template-columns: 420px 1fr;
-        height: 100vh;
-        overflow: hidden;
-      }
-      #controls {
-        padding: 16px;
-        background: rgba(18, 18, 26, 0.95);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-right: 1px solid #22223a;
-        box-sizing: border-box;
-        height: 100vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-      }
-      #controls h2 {
-        margin: 0 0 12px 0;
-        font-size: 14px;
-        font-weight: 700;
-        color: #fff;
-      }
-      .row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 8px 0;
-      }
-      .row label {
-        width: 160px;
-        font-size: 12px;
-        color: #bdbdd8;
-      }
-      .row input[type="range"] {
-        flex: 1;
-      }
-      .row output {
-        width: 70px;
-        text-align: right;
-        font-variant-numeric: tabular-nums;
-        font-size: 12px;
-        color: #fff;
-      }
-      .btns {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-      }
-      button {
-        cursor: pointer;
-        padding: 8px 10px;
-        border-radius: 10px;
-        border: 1px solid #2b2b45;
-        background: #191927;
-        color: #fff;
-      }
-      button:hover {
-        background: #202033;
-      }
-      #hint {
-        font-size: 12px;
-        color: #9aa;
-        line-height: 1.35;
-        margin-top: 10px;
-      }
-      #canvasContainer {
-        position: relative;
-        background: #000;
-      }
-      #can {
-        display: block;
-        width: 100%;
-        height: 100vh;
-        background: #000;
-      }
-      #stats {
-        font-size: 12px;
-        color: #bdbdd8;
-        margin-top: 8px;
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-      }
-      code {
-        color: #d5e6ff;
-      }
-      /* Layer sections */
-      .layer-section {
-        margin: 10px 0;
-        padding: 10px;
-        background: rgba(30, 30, 50, 0.5);
-        border: 1px solid #2b2b45;
-        border-radius: 8px;
-      }
-      .layer-header {
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 600;
-        color: #8ab4f8;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .layer-header:hover {
-        color: #b794f6;
-      }
-      .toggle {
-        font-size: 10px;
-        transition: transform 0.2s;
-      }
-      .toggle.collapsed {
-        transform: rotate(-90deg);
-      }
-      .frozen-badge {
-        font-size: 10px;
-        padding: 2px 6px;
-        background: rgba(255, 100, 100, 0.3);
-        border: 1px solid rgba(255, 100, 100, 0.5);
-        border-radius: 4px;
-        margin-left: auto;
-      }
-      .layer-content {
-        display: block;
-      }
-      .layer-content.collapsed {
-        display: none;
-      }
-      .layer-value {
-        font-size: 10px;
-        padding: 2px 6px;
-        background: rgba(138, 180, 248, 0.15);
-        border: 1px solid rgba(138, 180, 248, 0.35);
-        border-radius: 4px;
-        margin-left: auto;
-        font-variant-numeric: tabular-nums;
-        color: #d5e6ff;
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div id="controls">
       <h2>계층 튜링 데모: 다중 계층 반응-확산</h2>
 
-          <div class="btns" style="margin-bottom: 16px;">
-            <button id="modeStruct" style="flex: 1;">구조 모드 (ON)</button>
-            <button id="modeRD" style="flex: 1; opacity: 0.6;">RD 모드</button>
-          </div>
+      <div class="btns" style="margin-bottom: 16px">
+        <button id="modeStruct" style="flex: 1">구조 모드 (ON)</button>
+        <button id="modeRD" style="flex: 1; opacity: 0.6">RD 모드</button>
+      </div>
 
-          <div class="btns" style="margin-bottom: 16px;">
-            <button id="addLayer">➕ 계층 추가</button>
-          </div>
+      <div class="btns" style="margin-bottom: 16px">
+        <button id="addLayer">➕ 계층 추가</button>
+      </div>
 
-          <div id="layersContainer"></div>
+      <div id="layersContainer"></div>
 
-          <div class="row" style="margin-top: 16px;">
-            <label>시각화 (좌)</label>
-            <select id="visLeft" style="flex: 1;">
-              <option value="state-a">RD: a</option>
-            </select>
-          </div>
+      <div class="row" style="margin-top: 16px">
+        <label>시각화 (좌)</label>
+        <select id="visLeft" style="flex: 1">
+          <option value="state-a">RD: a</option>
+        </select>
+      </div>
 
-          <div class="row">
-            <label>시각화 (우)</label>
-            <select id="visRight" style="flex: 1;">
-              <option value="struct-0">A (Layer 0)</option>
-            </select>
-          </div>
+      <div class="row">
+        <label>시각화 (우)</label>
+        <select id="visRight" style="flex: 1">
+          <option value="struct-0">A (Layer 0)</option>
+        </select>
+      </div>
 
-          <div class="row">
-            <label>diffA (a 확산)</label
-            ><input
-              id="diffA"
-              type="range"
-              min="0.0"
-              max="2.0"
-              step="0.001"
-              value="0.291"
-            /><output id="diffA_o"></output>
-          </div>
-          <div class="row">
-            <label>diffB (b 확산)</label
-            ><input
-              id="diffB"
-              type="range"
-              min="0.0"
-              max="2.0"
-              step="0.001"
-              value="0.359"
-            /><output id="diffB_o"></output>
-          </div>
+      <div class="row">
+        <label>diffA (a 확산)</label
+        ><input
+          id="diffA"
+          type="range"
+          min="0.0"
+          max="2.0"
+          step="0.001"
+          value="0.291"
+        /><output id="diffA_o"></output>
+      </div>
+      <div class="row">
+        <label>diffB (b 확산)</label
+        ><input
+          id="diffB"
+          type="range"
+          min="0.0"
+          max="2.0"
+          step="0.001"
+          value="0.359"
+        /><output id="diffB_o"></output>
+      </div>
 
-          <div class="row">
-            <label>feed (F)</label
-            ><input
-              id="feed"
-              type="range"
-              min="0.0"
-              max="0.10"
-              step="0.0001"
-              value="0.1000"
-            /><output id="feed_o"></output>
-          </div>
-          <div class="row">
-            <label>kill (K)</label
-            ><input
-              id="kill"
-              type="range"
-              min="0.0"
-              max="0.10"
-              step="0.0001"
-              value="0.1000"
-            /><output id="kill_o"></output>
-          </div>
+      <div class="row">
+        <label>feed (F)</label
+        ><input
+          id="feed"
+          type="range"
+          min="0.0"
+          max="0.10"
+          step="0.0001"
+          value="0.1000"
+        /><output id="feed_o"></output>
+      </div>
+      <div class="row">
+        <label>kill (K)</label
+        ><input
+          id="kill"
+          type="range"
+          min="0.0"
+          max="0.10"
+          step="0.0001"
+          value="0.1000"
+        /><output id="kill_o"></output>
+      </div>
 
-          <div class="row">
-            <label>dt</label
-            ><input
-              id="dt"
-              type="range"
-              min="0.1"
-              max="2.0"
-              step="0.01"
-              value="0.72"
-            /><output id="dt_o"></output>
-          </div>
+      <div class="row">
+        <label>dt</label
+        ><input
+          id="dt"
+          type="range"
+          min="0.1"
+          max="2.0"
+          step="0.01"
+          value="0.72"
+        /><output id="dt_o"></output>
+      </div>
 
-          <div class="row">
-            <label>전역 억제 강도 (C→a)</label
-            ><input
-              id="inh"
-              type="range"
-              min="0.0"
-              max="2.5"
-              step="0.001"
-              value="2.500"
-            /><output id="inh_o"></output>
-          </div>
-          <div class="row">
-            <label>C 평활(느림)</label
-            ><input
-              id="cSmooth"
-              type="range"
-              min="0.0"
-              max="0.99"
-              step="0.001"
-              value="0.000"
-            /><output id="cSmooth_o"></output>
-          </div>
+      <div id="structControls">
+        <div class="row">
+          <label>전역 억제 강도 (C→a)</label
+          ><input
+            id="inh"
+            type="range"
+            min="0.0"
+            max="2.5"
+            step="0.001"
+            value="2.500"
+          /><output id="inh_o"></output>
+        </div>
+        <div class="row">
+          <label>C 평활(느림)</label
+          ><input
+            id="cSmooth"
+            type="range"
+            min="0.0"
+            max="0.99"
+            step="0.001"
+            value="0.000"
+          /><output id="cSmooth_o"></output>
+        </div>
 
-          <div class="row">
-            <label>C 소스(계층)</label>
-            <select id="cSource" style="flex: 1;"></select>
-          </div>
-          <div class="row">
-            <label>A(구조량) 감도</label
-            ><input
-              id="aGain"
-              type="range"
-              min="0.1"
-              max="10.0"
-              step="0.01"
-              value="10.00"
-            /><output id="aGain_o"></output>
-          </div>
+        <div class="row">
+          <label>C 소스(계층)</label>
+          <select id="cSource" style="flex: 1"></select>
+        </div>
+        <div class="row">
+          <label>A(구조량) 감도</label
+          ><input
+            id="aGain"
+            type="range"
+            min="0.1"
+            max="10.0"
+            step="0.01"
+            value="10.00"
+          /><output id="aGain_o"></output>
+        </div>
 
-          <div class="btns">
-            <button id="toggleC">C 억제: ON</button>
-          </div>
+        <div class="btns">
+          <button id="toggleC">C 억제: ON</button>
+        </div>
+      </div>
 
-          <div class="btns">
-            <button id="reset">리셋</button>
-            <button id="pause">일시정지</button>
-            <button id="seed">시드(패치 추가)</button>
-          </div>
+      <div class="btns">
+        <button id="reset">리셋</button>
+        <button id="pause">일시정지</button>
+        <button id="seed">시드(패치 추가)</button>
+      </div>
 
-          <div id="stats">
-            <div>전역 억제 C: <span id="cval">0.0000</span></div>
-            <div>FPS: <span id="fps">—</span></div>
-          </div>
+      <div id="stats">
+        <div id="cStat">전역 억제 C: <span id="cval">0.0000</span></div>
+        <div>FPS: <span id="fps">—</span></div>
+      </div>
 
-          <div id="hint">
-            왼쪽은 <b>a</b> 패턴(활성에 해당), 오른쪽은 <b>A(구조량)</b> 시각화.
-            <br />
-            <b>C</b>는 A의 전역 평균(1×1 mip)으로 추정해서, 다음 프레임에서 a
-            전체를 눌러요. <br />
-            즉 <code>(a,b)</code>가 만든 구조가 커질수록 <code>C↑</code> →
-            <code>a↓</code>.
-          </div>
+      <div id="hint">
+        구조 모드: 왼쪽은 <b>a</b> 패턴(활성), 오른쪽은 <b>A(구조량)</b> 시각화.
+        <br />
+        <b>C</b>는 A의 전역 평균(1×1 mip)으로 추정해서 다음 프레임에서 a 전체를
+        눌러요. <br />
+        즉 <code>(a,b)</code>가 만든 구조가 커질수록 <code>C↑</code> →
+        <code>a↓</code>.
+      </div>
     </div>
 
     <div id="canvasContainer">
       <canvas id="can"></canvas>
     </div>
 
-    <script>
-      (() => {
-        const canvas = document.getElementById("can");
-        const gl = canvas.getContext("webgl2", {
-          antialias: false,
-          alpha: false,
-          preserveDrawingBuffer: false,
-        });
-        if (!gl) {
-          alert("WebGL2가 필요합니다.");
-          return;
-        }
-
-        // --- Extensions (float render target)
-        const extColorBufFloat = gl.getExtension("EXT_color_buffer_float");
-        const extFloatLin = gl.getExtension("OES_texture_float_linear");
-        if (!extColorBufFloat) {
-          alert(
-            "EXT_color_buffer_float 확장이 필요합니다(대부분 최신 브라우저 지원)."
-          );
-          return;
-        }
-
-        // --- Resize
-        function resize() {
-          const dpr = Math.min(2, window.devicePixelRatio || 1);
-          const w = Math.floor(canvas.clientWidth * dpr);
-          const h = Math.floor(canvas.clientHeight * dpr);
-          if (canvas.width !== w || canvas.height !== h) {
-            canvas.width = w;
-            canvas.height = h;
-            gl.viewport(0, 0, w, h);
-          }
-        }
-        new ResizeObserver(resize).observe(canvas);
-        resize();
-
-        // --- Simulation texture size (POT for mipmaps)
-        const SIM = 256; // 256x256 (power-of-two)
-        const RGBA_FMT = gl.RGBA16F; // use RGBA for better compatibility
-        const RGBA_TYPE = gl.HALF_FLOAT; // from WebGL2
-
-        function createTexRG() {
-          const t = gl.createTexture();
-          gl.bindTexture(gl.TEXTURE_2D, t);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-          gl.texImage2D(
-            gl.TEXTURE_2D,
-            0,
-            RGBA_FMT,
-            SIM,
-            SIM,
-            0,
-            gl.RGBA,
-            RGBA_TYPE,
-            null
-          );
-          gl.bindTexture(gl.TEXTURE_2D, null);
-          return t;
-        }
-
-        function createTexR_mip() {
-          const t = gl.createTexture();
-          gl.bindTexture(gl.TEXTURE_2D, t);
-          gl.texParameteri(
-            gl.TEXTURE_2D,
-            gl.TEXTURE_MIN_FILTER,
-            gl.LINEAR_MIPMAP_LINEAR
-          );
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-          gl.texImage2D(
-            gl.TEXTURE_2D,
-            0,
-            RGBA_FMT,
-            SIM,
-            SIM,
-            0,
-            gl.RGBA,
-            RGBA_TYPE,
-            null
-          );
-          gl.bindTexture(gl.TEXTURE_2D, null);
-          return t;
-        }
-
-        function createFBO(tex, level = 0) {
-          const fbo = gl.createFramebuffer();
-          gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-          gl.framebufferTexture2D(
-            gl.FRAMEBUFFER,
-            gl.COLOR_ATTACHMENT0,
-            gl.TEXTURE_2D,
-            tex,
-            level
-          );
-          const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-          if (status !== gl.FRAMEBUFFER_COMPLETE) {
-            const statusNames = {
-              [gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT]: "INCOMPLETE_ATTACHMENT",
-              [gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT]: "MISSING_ATTACHMENT",
-              [gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS]: "INCOMPLETE_DIMENSIONS",
-              [gl.FRAMEBUFFER_UNSUPPORTED]: "UNSUPPORTED",
-              [gl.FRAMEBUFFER_INCOMPLETE_MULTISAMPLE]: "INCOMPLETE_MULTISAMPLE"
-            };
-            const statusName = statusNames[status] || `Unknown (${status})`;
-            throw new Error(`FBO not complete: ${statusName} (level ${level})`);
-          }
-          return fbo;
-        }
-
-        // --- Shaders
-        const quadVS = `#version 300 es
-  precision highp float;
-  out vec2 vUV;
-  void main(){
-    vec2 p = vec2((gl_VertexID<<1)&2, gl_VertexID&2);
-    vUV = p;
-    gl_Position = vec4(p*2.0-1.0, 0.0, 1.0);
-  }`;
-
-        // Gray-Scott + global inhibition C : da = diffA*lap(a) - a*b*b + F*(1-a) - inh*C*a
-        // db = diffB*lap(b) + a*b*b - (K+F)*b
-        const rdFS = `#version 300 es
-  precision highp float;
-  uniform sampler2D uState;
-  uniform vec2 uTexel;  // 1/SIM
-  uniform float diffA, diffB, feed, kill, dt;
-  uniform float inh;    // inhibition strength
-  uniform float C;      // global inhibitor level [~0..]
-  in vec2 vUV;
-  layout(location=0) out vec4 outColor;
-
-  vec2 sampleState(vec2 uv){ return texture(uState, uv).rg; }
-
-  void main(){
-    vec2 ab = sampleState(vUV);
-    float a = ab.r;
-    float b = ab.g;
-
-    // 5-point Laplacian
-    vec2 n  = sampleState(vUV + vec2(0.0,  uTexel.y));
-    vec2 s  = sampleState(vUV + vec2(0.0, -uTexel.y));
-    vec2 e  = sampleState(vUV + vec2( uTexel.x, 0.0));
-    vec2 w  = sampleState(vUV + vec2(-uTexel.x, 0.0));
-    vec2 lap = (n + s + e + w - 4.0*ab);
-
-    float reaction = a*b*b;
-    float da = diffA*lap.r - reaction + feed*(1.0 - a) - inh*C*a;
-    float db = diffB*lap.g + reaction - (kill + feed)*b;
-
-    a = clamp(a + da*dt, 0.0, 1.0);
-    b = clamp(b + db*dt, 0.0, 1.0);
-
-    outColor = vec4(a, b, 0.0, 0.0);
-  }`;
-
-        // Structure measure A ~ |∇a| (gradient magnitude) * gain
-        const structureFS = `#version 300 es
-  precision highp float;
-  uniform sampler2D uState;
-  uniform vec2 uTexel;
-  uniform float gain;
-  in vec2 vUV;
-  layout(location=0) out vec4 outColor;
-
-  float aAt(vec2 uv){ return texture(uState, uv).r; }
-
-  void main(){
-    float aC = aAt(vUV);
-    float aN = aAt(vUV + vec2(0.0,  uTexel.y));
-    float aS = aAt(vUV + vec2(0.0, -uTexel.y));
-    float aE = aAt(vUV + vec2( uTexel.x, 0.0));
-    float aW = aAt(vUV + vec2(-uTexel.x, 0.0));
-
-    // Sobel-lite gradient
-    float dx = (aE - aW) * 0.5;
-    float dy = (aN - aS) * 0.5;
-    float g = sqrt(dx*dx + dy*dy) * gain;
-
-    outColor = vec4(clamp(g, 0.0, 1.0), 0.0, 0.0, 0.0);
-  }`;
-
-        // Render: left = selectable, right = selectable
-        const renderFS = `#version 300 es
-  precision highp float;
-  uniform sampler2D uLeftTex;
-  uniform sampler2D uRightTex;
-  uniform int uLeftChannel;   // 0=R, 1=G, 2=B, 3=A
-  uniform int uRightChannel;
-  uniform float C;
-  in vec2 vUV;
-  out vec4 outColor;
-
-  float ramp(float x){
-    // simple contrast curve
-    x = clamp(x, 0.0, 1.0);
-    return smoothstep(0.1, 0.9, x);
-  }
-
-  float getChannel(sampler2D tex, vec2 uv, int ch){
-    vec4 val = texture(tex, uv);
-    if (ch == 0) return val.r;
-    if (ch == 1) return val.g;
-    if (ch == 2) return val.b;
-    return val.a;
-  }
-
-  void main(){
-    // split screen
-    bool right = (vUV.x > 0.5);
-    vec2 uv = vUV;
-    uv.x = right ? (uv.x - 0.5)*2.0 : uv.x*2.0;
-
-    if (!right){
-      float val = getChannel(uLeftTex, uv, uLeftChannel);
-      float v = ramp(val);
-      outColor = vec4(vec3(v), 1.0);
-    } else {
-      float val = getChannel(uRightTex, uv, uRightChannel);
-      float v = ramp(val);
-      // encode C as top bar
-      float bar = step(0.98, uv.y) * step(uv.x, clamp(C,0.0,1.0));
-      vec3 col = vec3(v);
-      col = mix(col, vec3(1.0), bar);
-      outColor = vec4(col, 1.0);
-    }
-  }`;
-
-        function compile(type, src) {
-          const s = gl.createShader(type);
-          gl.shaderSource(s, src);
-          gl.compileShader(s);
-          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-            console.error(gl.getShaderInfoLog(s));
-            throw new Error("Shader compile failed");
-          }
-          return s;
-        }
-        function program(vsSrc, fsSrc) {
-          const p = gl.createProgram();
-          gl.attachShader(p, compile(gl.VERTEX_SHADER, vsSrc));
-          gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fsSrc));
-          gl.linkProgram(p);
-          if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-            console.error(gl.getProgramInfoLog(p));
-            throw new Error("Program link failed");
-          }
-          return p;
-        }
-
-        const progRD = program(quadVS, rdFS);
-        const progStruct = program(quadVS, structureFS);
-        const progRender = program(quadVS, renderFS);
-
-        // ============================================
-        // MODE STATE & CONFIGURATION
-        // ============================================
-        let currentMode = 'struct';  // 'rd' or 'struct'
-
-        const modeState = {
-          rd: {
-            layers: [],
-            textures: [],
-            programs: [],
-            params: {}
-          },
-          struct: {
-            layers: [],
-            textures: [],
-            programs: [progStruct],
-            params: {}
-          }
-        };
-
-        // --- Base RD (a,b) textures (shared by both modes)
-        const state0 = createTexRG();
-        const state1 = createTexRG();
-        let ping = { tex: state0, fbo: createFBO(state0) };
-        let pong = { tex: state1, fbo: createFBO(state1) };
-
-        // --- Structure Mode Layer 0 (A from a gradient)
-        const texA = createTexR_mip();
-        // Generate mipmaps first so all levels exist before creating FBOs
-        gl.bindTexture(gl.TEXTURE_2D, texA);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        gl.bindTexture(gl.TEXTURE_2D, null);
-
-        const fboA0 = createFBO(texA, 0);
-        const lastLevel = Math.floor(Math.log2(SIM)); // 256 -> 8
-        const fboA1x1 = createFBO(texA, lastLevel);
-
-        // Initialize first structure layer
-        modeState.struct.layers.push({
-          id: 0,
-          name: 'A (from a gradient)',
-          sourceTex: ping.tex,
-          texture: texA,
-          fbo: fboA0,
-          fbo1x1: fboA1x1,
-          params: { gain: 10.0 },
-          feedbackTarget: 'state',
-          feedbackStrength: 2.5,
-          globalValue: 0.0
-        });
-
-        // Initialize RD mode base layer
-        modeState.rd.layers.push({
-          id: 0,
-          name: 'Base (a,b)',
-          variables: ['a', 'b'],
-          texIndex: 0,
-          channels: 'RG',
-          frozen: false,
-          composite: null,
-          params: {
-            diffA: 0.291,
-            diffB: 0.359,
-            feed: 0.1,
-            kill: 0.1,
-            dt: 0.72
-          }
-        });
-
-        // --- Initialize (a=1, b=0 with random patches)
-        function initState() {
-          const data = new Float32Array(SIM * SIM * 4);
-          for (let i = 0; i < SIM * SIM; i++) {
-            data[i * 4 + 0] = 1.0; // a
-            data[i * 4 + 1] = 0.0; // b
-            data[i * 4 + 2] = 0.0; // unused
-            data[i * 4 + 3] = 0.0; // unused
-          }
-          // seed center blobs
-          function addPatch(cx, cy, r, bVal) {
-            for (let y = -r; y <= r; y++) {
-              for (let x = -r; x <= r; x++) {
-                const px = (cx + x + SIM) % SIM;
-                const py = (cy + y + SIM) % SIM;
-                if (x * x + y * y <= r * r) {
-                  const idx = (py * SIM + px) * 4;
-                  data[idx + 0] = 0.5;
-                  data[idx + 1] = bVal;
-                }
-              }
-            }
-          }
-          addPatch(SIM / 2, SIM / 2, 12, 0.85);
-          addPatch(SIM / 2 + 40, SIM / 2 - 30, 10, 0.75);
-          addPatch(SIM / 2 - 50, SIM / 2 + 35, 9, 0.7);
-
-          gl.bindTexture(gl.TEXTURE_2D, ping.tex);
-          gl.texSubImage2D(
-            gl.TEXTURE_2D,
-            0,
-            0,
-            0,
-            SIM,
-            SIM,
-            gl.RGBA,
-            gl.FLOAT,
-            data
-          );
-          gl.bindTexture(gl.TEXTURE_2D, pong.tex);
-          gl.texSubImage2D(
-            gl.TEXTURE_2D,
-            0,
-            0,
-            0,
-            SIM,
-            SIM,
-            gl.RGBA,
-            gl.FLOAT,
-            data
-          );
-          gl.bindTexture(gl.TEXTURE_2D, null);
-        }
-
-        // NOTE: For HALF_FLOAT internal storage, uploading FLOAT is allowed in WebGL2 for texSubImage2D
-        // on most browsers. If it fails on your device, switch data to Float16 packing (more work).
-        initState();
-
-        // --- UI
-        const el = (id) => document.getElementById(id);
-        const params = {
-          diffA: +el("diffA").value,
-          diffB: +el("diffB").value,
-          feed: +el("feed").value,
-          kill: +el("kill").value,
-          dt: +el("dt").value,
-          inh: +el("inh").value,
-          cSmooth: +el("cSmooth").value,
-          aGain: +el("aGain").value,
-        };
-        function bindRange(id, key, fmt = (v) => v.toFixed(4), onChange) {
-          const r = el(id),
-            o = el(id + "_o");
-          const upd = () => {
-            params[key] = +r.value;
-            o.value = fmt(params[key]);
-            if (onChange) onChange(params[key]);
-          };
-          r.addEventListener("input", upd);
-
-          // Mouse wheel support
-          r.addEventListener("wheel", (e) => {
-            e.preventDefault();
-            const min = parseFloat(r.min);
-            const max = parseFloat(r.max);
-            const step = parseFloat(r.step);
-            const delta = e.deltaY > 0 ? -step : step;
-            let newVal = parseFloat(r.value) + delta * 5; // 5x multiplier for smoother control
-            newVal = Math.max(min, Math.min(max, newVal));
-            r.value = newVal;
-            upd();
-          }, { passive: false });
-
-          upd();
-        }
-        bindRange("diffA", "diffA", (v) => v.toFixed(3));
-        bindRange("diffB", "diffB", (v) => v.toFixed(3));
-        bindRange("feed", "feed", (v) => v.toFixed(4));
-        bindRange("kill", "kill", (v) => v.toFixed(4));
-        bindRange("dt", "dt", (v) => v.toFixed(2));
-        bindRange("inh", "inh", (v) => v.toFixed(3));
-        bindRange("cSmooth", "cSmooth", (v) => v.toFixed(3));
-        bindRange("aGain", "aGain", (v) => v.toFixed(2), (v) => {
-          const layer0 = modeState.struct.layers[0];
-          if (!layer0) return;
-          layer0.params.gain = v;
-
-          const layerGainInput = document.getElementById('layer0_gain');
-          const layerGainOutput = document.getElementById('layer0_gain_o');
-          if (layerGainInput && document.activeElement !== layerGainInput) {
-            layerGainInput.value = String(v);
-          }
-          if (layerGainOutput) layerGainOutput.value = v.toFixed(2);
-        });
-
-        let paused = false;
-        let cEnabled = true;
-
-        el("pause").onclick = () => {
-          paused = !paused;
-          el("pause").textContent = paused ? "재생" : "일시정지";
-        };
-        el("reset").onclick = () => {
-          initState();
-          C = 0.0;
-        };
-        el("seed").onclick = () => {
-          // add random patches on GPU by drawing a tiny quad into state (cheap hack: re-init + extra patches)
-          // simpler: just re-init once and let it evolve; user can tweak params for variety
-          initState();
-        };
-        el("toggleC").onclick = () => {
-          cEnabled = !cEnabled;
-          el("toggleC").textContent = cEnabled ? "C 억제: ON" : "C 억제: OFF";
-          if (!cEnabled) {
-            C = 0.0; // Reset C when disabled
-          }
-        };
-
-        // ============================================
-        // MODE SWITCHING & LAYER MANAGEMENT
-        // ============================================
-
-        function switchMode(newMode) {
-          if (newMode === currentMode) return;
-
-          currentMode = newMode;
-
-          // Update mode buttons
-          el("modeStruct").style.opacity = currentMode === 'struct' ? '1' : '0.6';
-          el("modeStruct").textContent = currentMode === 'struct' ? '구조 모드 (ON)' : '구조 모드';
-          el("modeRD").style.opacity = currentMode === 'rd' ? '1' : '0.6';
-          el("modeRD").textContent = currentMode === 'rd' ? 'RD 모드 (ON)' : 'RD 모드';
-
-          // Reset simulation
-          initState();
-          C = 0.0;
-
-          // Rebuild layer UI
-          buildLayerUI();
-          updateVisualizationDropdowns();
-          updateCSourceDropdown();
-        }
-
-        function addStructLayer() {
-          const layers = modeState.struct.layers;
-          console.log('[addStructLayer] Current layers:', layers.length);
-
-          if (layers.length >= 5) {
-            alert('최대 5개 계층까지만 추가 가능합니다.');
-            return;
-          }
-
-          const lastLayer = layers[layers.length - 1];
-          const layerName = String.fromCharCode(66 + layers.length - 1); // B, C, D...
-          console.log('[addStructLayer] Adding layer:', layerName);
-
-          // Create texture with mipmaps
-          const tex = createTexR_mip();
-          gl.bindTexture(gl.TEXTURE_2D, tex);
-          gl.generateMipmap(gl.TEXTURE_2D);
-          gl.bindTexture(gl.TEXTURE_2D, null);
-
-          // Create FBOs
-          const fbo0 = createFBO(tex, 0);
-          const fbo1x1 = createFBO(tex, lastLevel);
-
-          // Create new layer
-          const newLayer = {
-            id: layers.length,
-            name: `${layerName} (from ${lastLayer.name})`,
-            sourceTex: lastLayer.texture,
-            texture: tex,
-            fbo: fbo0,
-            fbo1x1: fbo1x1,
-            params: { gain: 5.0 },
-            feedbackTarget: lastLayer.texture,
-            feedbackStrength: 1.5,
-            globalValue: 0.0
-          };
-
-          layers.push(newLayer);
-          console.log('[addStructLayer] Layer added. Total layers:', layers.length);
-          console.log('[addStructLayer] New layer:', newLayer);
-
-          // Rebuild UI
-          buildLayerUI();
-
-          // Update visualization dropdowns
-          updateVisualizationDropdowns();
-          // Auto-switch to the new layer so the user sees an immediate change
-          el('visRight').value = `struct-${newLayer.id}`;
-          updateVisualizationConfig();
-
-          // Make new layer drive C by default (hierarchy actually affects dynamics)
-          updateCSourceDropdown({ selectLast: true });
-          C = 0.0;
-
-          console.log('[addStructLayer] UI rebuilt');
-        }
-
-        function buildLayerUI() {
-          const container = el('layersContainer');
-          container.innerHTML = '';
-
-          const layers = currentMode === 'struct' ? modeState.struct.layers : modeState.rd.layers;
-
-          layers.forEach(layer => {
-            const section = document.createElement('div');
-            section.className = 'layer-section';
-            section.id = `layer-${layer.id}`;
-
-            const header = document.createElement('div');
-            header.className = 'layer-header';
-            header.onclick = () => toggleLayer(layer.id);
-            header.innerHTML = `
-              <span class="toggle" id="toggle-${layer.id}">▼</span>
-              <span>${layer.name}</span>
-              ${currentMode === 'struct' ? `<span class="layer-value" id="layerVal-${layer.id}">—</span>` : ''}
-              ${layer.frozen ? '<span class="frozen-badge">FROZEN</span>' : ''}
-            `;
-
-            const content = document.createElement('div');
-            content.className = 'layer-content';
-            content.id = `content-${layer.id}`;
-
-            // Add parameter sliders
-            Object.entries(layer.params).forEach(([key, value]) => {
-              const row = document.createElement('div');
-              row.className = 'row';
-
-              const label = document.createElement('label');
-              label.textContent = key;
-
-              const input = document.createElement('input');
-              input.type = 'range';
-              input.id = `layer${layer.id}_${key}`;
-              input.min = key === 'gain' ? '0.1' : '0.0';
-              input.max = key === 'gain' ? '20.0' : '5.0';
-              input.step = '0.01';
-              input.value = value;
-
-              const output = document.createElement('output');
-              output.id = `layer${layer.id}_${key}_o`;
-              output.value = value.toFixed(2);
-
-              input.addEventListener('input', () => {
-                layer.params[key] = +input.value;
-                output.value = (+input.value).toFixed(2);
-
-                if (currentMode === 'struct' && layer.id === 0 && key === 'gain') {
-                  const aGain = el('aGain');
-                  aGain.value = input.value;
-                  aGain.dispatchEvent(new Event('input'));
-                }
-              });
-
-              // Mouse wheel support
-              input.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const delta = e.deltaY > 0 ? -parseFloat(input.step) : parseFloat(input.step);
-                let newVal = parseFloat(input.value) + delta * 5;
-                newVal = Math.max(parseFloat(input.min), Math.min(parseFloat(input.max), newVal));
-                input.value = newVal;
-                layer.params[key] = newVal;
-                output.value = newVal.toFixed(2);
-
-                if (currentMode === 'struct' && layer.id === 0 && key === 'gain') {
-                  const aGain = el('aGain');
-                  aGain.value = String(newVal);
-                  aGain.dispatchEvent(new Event('input'));
-                }
-              }, { passive: false });
-
-              row.appendChild(label);
-              row.appendChild(input);
-              row.appendChild(output);
-              content.appendChild(row);
-            });
-
-            // Add feedback strength slider for non-first layers
-            if (currentMode === 'struct' && layer.id > 0) {
-              const row = document.createElement('div');
-              row.className = 'row';
-
-              const label = document.createElement('label');
-              label.textContent = 'Feedback Strength';
-
-              const input = document.createElement('input');
-              input.type = 'range';
-              input.id = `layer${layer.id}_fbStrength`;
-              input.min = '0.0';
-              input.max = '5.0';
-              input.step = '0.01';
-              input.value = layer.feedbackStrength;
-
-              const output = document.createElement('output');
-              output.id = `layer${layer.id}_fbStrength_o`;
-              output.value = layer.feedbackStrength.toFixed(2);
-
-              input.addEventListener('input', () => {
-                layer.feedbackStrength = +input.value;
-                output.value = (+input.value).toFixed(2);
-              });
-
-              row.appendChild(label);
-              row.appendChild(input);
-              row.appendChild(output);
-              content.appendChild(row);
-            }
-
-            section.appendChild(header);
-            section.appendChild(content);
-            container.appendChild(section);
-          });
-        }
-
-        function toggleLayer(id) {
-          const toggle = el(`toggle-${id}`);
-          const content = el(`content-${id}`);
-
-          if (content.classList.contains('collapsed')) {
-            content.classList.remove('collapsed');
-            toggle.classList.remove('collapsed');
-          } else {
-            content.classList.add('collapsed');
-            toggle.classList.add('collapsed');
-          }
-        }
-
-        function addRDLayer() {
-          const layers = modeState.rd.layers;
-          if (layers.length >= 3) {
-            alert('RD 모드는 최대 3개 계층까지 가능합니다 (a,b → c → d)');
-            return;
-          }
-
-          // Freeze previous layer
-          if (layers.length > 0) {
-            layers[layers.length - 1].frozen = true;
-          }
-
-          const varName = String.fromCharCode(99 + layers.length - 1); // c, d, e
-          const newLayer = {
-            id: layers.length,
-            name: `Layer ${layers.length} (${varName})`,
-            variables: [varName],
-            frozen: false,
-            params: {
-              [`diff${varName.toUpperCase()}`]: 0.3,
-              feed: 0.1,
-              kill: 0.1
-            }
-          };
-
-          layers.push(newLayer);
-          buildLayerUI();
-          updateVisualizationDropdowns();
-        }
-
-        // Wire up mode buttons
-        el("modeStruct").onclick = () => switchMode('struct');
-        el("modeRD").onclick = () => switchMode('rd');
-        el("addLayer").onclick = () => {
-          if (currentMode === 'struct') {
-            addStructLayer();
-          } else {
-            addRDLayer();
-          }
-        };
-
-        // Initialize layer UI
-        buildLayerUI();
-
-        // ============================================
-        // VISUALIZATION SELECTION
-        // ============================================
-        let visConfig = {
-          left: { texture: ping.tex, channel: 0 },
-          right: { texture: texA, channel: 0 }
-        };
-
-        function updateVisualizationDropdowns() {
-          const leftSel = el('visLeft');
-          const rightSel = el('visRight');
-          const leftVal = leftSel.value;
-          const rightVal = rightSel.value;
-
-          // Clear current options
-          leftSel.innerHTML = '';
-          rightSel.innerHTML = '';
-
-          // Add RD base variables
-          leftSel.add(new Option('RD: a', 'state-a'));
-          leftSel.add(new Option('RD: b', 'state-b'));
-          rightSel.add(new Option('RD: a', 'state-a'));
-          rightSel.add(new Option('RD: b', 'state-b'));
-
-          if (currentMode === 'struct') {
-            // Add structure layers
-            modeState.struct.layers.forEach(layer => {
-              const name = layer.name;
-              const value = `struct-${layer.id}`;
-              leftSel.add(new Option(name, value));
-              rightSel.add(new Option(name, value));
-            });
-          } else if (currentMode === 'rd') {
-            // Add RD variables
-            let channelIdx = 2; // c starts at channel 2 (R=a, G=b, B=c)
-            modeState.rd.layers.forEach((layer, i) => {
-              if (i > 0) { // Skip base layer
-                layer.variables.forEach(varName => {
-                  leftSel.add(new Option(`RD: ${varName}`, `state-${varName}`));
-                  rightSel.add(new Option(`RD: ${varName}`, `state-${varName}`));
-                  channelIdx++;
-                });
-              }
-            });
-          }
-
-          // Restore previous selection or use defaults
-          leftSel.value = leftVal || 'state-a';
-          rightSel.value = rightVal || 'struct-0';
-
-          updateVisualizationConfig();
-        }
-
-        function parseVisualizationSelection(sel) {
-          const parts = sel.split('-');
-
-          if (parts[0] === 'state') {
-            // RD state variable
-            const varName = parts[1];
-            let channel = 0;
-            if (varName === 'a') channel = 0;
-            else if (varName === 'b') channel = 1;
-            else if (varName === 'c') channel = 2;
-            else if (varName === 'd') channel = 3;
-
-            return {
-              get texture() { return ping.tex; },
-              channel: channel
-            };
-          } else if (parts[0] === 'struct') {
-            // Structure layer
-            const layerId = parseInt(parts[1]);
-            const layer = modeState.struct.layers[layerId];
-            if (layer) {
-              return {
-                get texture() { return layer.texture; },
-                channel: 0
-              };
-            }
-          }
-
-          // Default
-          return {
-            get texture() { return ping.tex; },
-            channel: 0
-          };
-        }
-
-        function updateVisualizationConfig() {
-          const leftVal = el('visLeft').value;
-          const rightVal = el('visRight').value;
-
-          visConfig.left = parseVisualizationSelection(leftVal);
-          visConfig.right = parseVisualizationSelection(rightVal);
-        }
-
-        el('visLeft').addEventListener('change', updateVisualizationConfig);
-        el('visRight').addEventListener('change', updateVisualizationConfig);
-        updateVisualizationDropdowns();
-
-        // ============================================
-        // C SOURCE (STRUCT LAYER SELECTION)
-        // ============================================
-        function updateCSourceDropdown({ selectLast = false } = {}) {
-          const sel = el('cSource');
-          if (!sel) return;
-
-          const prev = sel.value;
-          sel.innerHTML = '';
-
-          modeState.struct.layers.forEach((layer) => {
-            sel.add(new Option(layer.name, String(layer.id)));
-          });
-
-          sel.disabled = currentMode !== 'struct';
-
-          if (!sel.options.length) return;
-
-          if (selectLast) {
-            sel.value = String(modeState.struct.layers.length - 1);
-            return;
-          }
-
-          const hasPrev = Array.from(sel.options).some((o) => o.value === prev);
-          sel.value = hasPrev ? prev : '0';
-        }
-
-        el('cSource').addEventListener('change', () => {
-          C = 0.0; // reset smoothing accumulator when changing source
-        });
-        updateCSourceDropdown();
-
-        // --- Uniform locations
-        function uni(p, name) {
-          return gl.getUniformLocation(p, name);
-        }
-        const rdU = {
-          uState: uni(progRD, "uState"),
-          uTexel: uni(progRD, "uTexel"),
-          diffA: uni(progRD, "diffA"),
-          diffB: uni(progRD, "diffB"),
-          feed: uni(progRD, "feed"),
-          kill: uni(progRD, "kill"),
-          dt: uni(progRD, "dt"),
-          inh: uni(progRD, "inh"),
-          C: uni(progRD, "C"),
-        };
-        const stU = {
-          uState: uni(progStruct, "uState"),
-          uTexel: uni(progStruct, "uTexel"),
-          gain: uni(progStruct, "gain"),
-        };
-        const reU = {
-          uLeftTex: uni(progRender, "uLeftTex"),
-          uRightTex: uni(progRender, "uRightTex"),
-          uLeftChannel: uni(progRender, "uLeftChannel"),
-          uRightChannel: uni(progRender, "uRightChannel"),
-          C: uni(progRender, "C"),
-        };
-
-        // --- Global inhibitor C
-        let C = 0.0;
-
-        // --- Draw helper (full-screen triangle)
-        function drawTo(fbo, w, h, programObj, setupFn) {
-          gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-          gl.viewport(0, 0, w, h);
-          gl.useProgram(programObj);
-          setupFn();
-          gl.drawArrays(gl.TRIANGLES, 0, 3);
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        }
-
-        // --- Main loop
-        let lastT = performance.now();
-        let fpsAcc = 0,
-          fpsN = 0,
-          fpsLast = performance.now();
-
-        function step() {
-          resize();
-
-          if (!paused) {
-            // 1) RD update: ping -> pong
-            drawTo(pong.fbo, SIM, SIM, progRD, () => {
-              gl.activeTexture(gl.TEXTURE0);
-              gl.bindTexture(gl.TEXTURE_2D, ping.tex);
-              gl.uniform1i(rdU.uState, 0);
-              gl.uniform2f(rdU.uTexel, 1.0 / SIM, 1.0 / SIM);
-              gl.uniform1f(rdU.diffA, params.diffA);
-              gl.uniform1f(rdU.diffB, params.diffB);
-              gl.uniform1f(rdU.feed, params.feed);
-              gl.uniform1f(rdU.kill, params.kill);
-              gl.uniform1f(rdU.dt, params.dt);
-              gl.uniform1f(rdU.inh, params.inh);
-              gl.uniform1f(rdU.C, C);
-            });
-
-            // swap
-            const tmp = ping;
-            ping = pong;
-            pong = tmp;
-
-            // 2) Structure layers: compute gradient → mipmap → readback for each layer
-            const structLayers = modeState.struct.layers;
-
-            structLayers.forEach((layer, i) => {
-              // Source is RD state for first layer, previous layer texture for others
-              const source = i === 0 ? ping.tex : structLayers[i-1].texture;
-
-              // Compute structure measure from source
-              drawTo(layer.fbo, SIM, SIM, progStruct, () => {
-                gl.activeTexture(gl.TEXTURE0);
-                gl.bindTexture(gl.TEXTURE_2D, source);
-                gl.uniform1i(stU.uState, 0);
-                gl.uniform2f(stU.uTexel, 1.0 / SIM, 1.0 / SIM);
-                gl.uniform1f(stU.gain, layer.params.gain);
-              });
-
-              // Generate mipmaps
-              gl.bindTexture(gl.TEXTURE_2D, layer.texture);
-              gl.generateMipmap(gl.TEXTURE_2D);
-              gl.bindTexture(gl.TEXTURE_2D, null);
-
-              // Read 1x1 mipmap for global value
-              gl.bindFramebuffer(gl.FRAMEBUFFER, layer.fbo1x1);
-              const pix = new Float32Array(4);
-              gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.FLOAT, pix);
-              gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-              layer.globalValue = Math.min(1.0, Math.max(0.0, pix[0] || 0.0));
-
-              const valEl = document.getElementById(`layerVal-${layer.id}`);
-              if (valEl) valEl.textContent = layer.globalValue.toFixed(3);
-            });
-
-            // 3) Apply feedback from selected structure layer (hierarchy)
-            if (structLayers.length > 0) {
-              const sel = el('cSource');
-              const selId = sel ? parseInt(sel.value, 10) : 0;
-              const srcLayer = structLayers[Math.min(structLayers.length - 1, Math.max(0, selId))] || structLayers[0];
-              const rawC = srcLayer.globalValue;
-
-              if (cEnabled) {
-                C = params.cSmooth * C + (1.0 - params.cSmooth) * rawC;
-              } else {
-                C = 0.0;
-              }
-              document.getElementById("cval").textContent = C.toFixed(4);
-            }
-          }
-
-          // 4) Render split-screen to canvas
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-          gl.viewport(0, 0, canvas.width, canvas.height);
-          gl.useProgram(progRender);
-
-          // Bind left texture
-          gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, visConfig.left.texture);
-          gl.uniform1i(reU.uLeftTex, 0);
-          gl.uniform1i(reU.uLeftChannel, visConfig.left.channel);
-
-          // Bind right texture
-          gl.activeTexture(gl.TEXTURE1);
-          gl.bindTexture(gl.TEXTURE_2D, visConfig.right.texture);
-          gl.uniform1i(reU.uRightTex, 1);
-          gl.uniform1i(reU.uRightChannel, visConfig.right.channel);
-
-          gl.uniform1f(reU.C, C);
-          gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-          // FPS
-          const now = performance.now();
-          const dt = now - lastT;
-          lastT = now;
-          fpsAcc += 1000.0 / Math.max(1e-6, dt);
-          fpsN++;
-          if (now - fpsLast > 500) {
-            document.getElementById("fps").textContent = (
-              fpsAcc / fpsN
-            ).toFixed(0);
-            fpsAcc = 0;
-            fpsN = 0;
-            fpsLast = now;
-          }
-
-          requestAnimationFrame(step);
-        }
-
-        requestAnimationFrame(step);
-      })();
-    </script>
+    <script defer src="src/shaders.js"></script>
+    <script defer src="src/main.js"></script>
   </body>
 </html>
