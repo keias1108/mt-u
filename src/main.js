@@ -316,12 +316,55 @@
   function bindRange(id, key, fmt = (v) => v.toFixed(4), onChange) {
     const r = el(id);
     const o = el(id + "_o");
-    const upd = () => {
-      params[key] = +r.value;
-      o.value = fmt(params[key]);
+
+    // Convert output to number input
+    if (o && o.tagName === "OUTPUT") {
+      const numInput = document.createElement("input");
+      numInput.type = "number";
+      numInput.id = id + "_o";
+      numInput.className = "value-input";
+      numInput.min = r.min;
+      numInput.max = r.max;
+      numInput.step = r.step;
+      o.replaceWith(numInput);
+    }
+
+    const input = el(id + "_o");
+
+    const upd = (fromInput = false) => {
+      if (!fromInput) {
+        params[key] = +r.value;
+      }
+      if (input) {
+        input.value = fmt(params[key]);
+      }
       if (onChange) onChange(params[key]);
     };
-    r.addEventListener("input", upd);
+
+    // Slider input event
+    r.addEventListener("input", () => upd(false));
+
+    // Number input event
+    if (input) {
+      input.addEventListener("input", () => {
+        const val = parseFloat(input.value);
+        if (!isNaN(val)) {
+          const min = parseFloat(r.min);
+          const max = parseFloat(r.max);
+          const clamped = Math.max(min, Math.min(max, val));
+          params[key] = clamped;
+          r.value = clamped;
+          if (onChange) onChange(clamped);
+        }
+      });
+
+      input.addEventListener("blur", () => {
+        // Re-format on blur
+        input.value = fmt(params[key]);
+      });
+    }
+
+    // Slider wheel event
     r.addEventListener(
       "wheel",
       (e) => {
@@ -333,11 +376,11 @@
         let newVal = parseFloat(r.value) + delta * 5;
         newVal = Math.max(min, Math.min(max, newVal));
         r.value = newVal;
-        upd();
+        upd(false);
       },
       { passive: false }
     );
-    upd();
+    upd(false);
   }
 
   bindRange("diffA", "diffA", (v) => v.toFixed(3));
@@ -379,6 +422,112 @@
     cEnabled = !cEnabled;
     el("toggleC").textContent = cEnabled ? "C 억제: ON" : "C 억제: OFF";
     if (!cEnabled) C = 0.0;
+  };
+
+  // ============================================================
+  // PARAMETER SAVE/LOAD
+  // ============================================================
+  el("saveParams").onclick = () => {
+    const data = {
+      params: { ...params },
+      rdStages: rdStages.map((s) => ({
+        id: s.id,
+        frozen: s.frozen,
+        params: s.params ? { ...s.params } : {},
+      })),
+      structLayers: structLayers.map((l) => ({
+        id: l.id,
+        params: { ...l.params },
+      })),
+      cEnabled,
+      currentMode,
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rd-params-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  el("loadParams").onclick = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+
+          // Restore params
+          if (data.params) {
+            Object.assign(params, data.params);
+            // Update UI
+            el("diffA").value = params.diffA;
+            el("diffB").value = params.diffB;
+            el("feed").value = params.feed;
+            el("kill").value = params.kill;
+            el("dt").value = params.dt;
+            el("inh").value = params.inh;
+            el("cSmooth").value = params.cSmooth;
+            el("aGain").value = params.aGain;
+
+            // Trigger updates
+            el("diffA").dispatchEvent(new Event("input"));
+            el("diffB").dispatchEvent(new Event("input"));
+            el("feed").dispatchEvent(new Event("input"));
+            el("kill").dispatchEvent(new Event("input"));
+            el("dt").dispatchEvent(new Event("input"));
+            el("inh").dispatchEvent(new Event("input"));
+            el("cSmooth").dispatchEvent(new Event("input"));
+            el("aGain").dispatchEvent(new Event("input"));
+          }
+
+          // Restore rdStages params
+          if (data.rdStages) {
+            data.rdStages.forEach((saved) => {
+              const stage = rdStages.find((s) => s.id === saved.id);
+              if (stage) {
+                stage.frozen = saved.frozen;
+                if (saved.params) Object.assign(stage.params, saved.params);
+              }
+            });
+          }
+
+          // Restore structLayers params
+          if (data.structLayers) {
+            data.structLayers.forEach((saved) => {
+              const layer = structLayers.find((l) => l.id === saved.id);
+              if (layer && saved.params) {
+                Object.assign(layer.params, saved.params);
+              }
+            });
+          }
+
+          // Restore cEnabled
+          if (typeof data.cEnabled === "boolean") {
+            cEnabled = data.cEnabled;
+            el("toggleC").textContent = cEnabled ? "C 억제: ON" : "C 억제: OFF";
+          }
+
+          buildLayerUI();
+          alert("파라미터가 성공적으로 불러와졌습니다.");
+        } catch (err) {
+          console.error(err);
+          alert("파라미터 불러오기 실패: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   };
 
   // ============================================================
@@ -504,6 +653,7 @@
     row.className = "row";
     const label = document.createElement("label");
     label.textContent = labelText;
+
     const input = document.createElement("input");
     input.type = "range";
     input.id = id;
@@ -511,15 +661,39 @@
     input.max = String(max);
     input.step = String(step);
     input.value = String(value);
-    const output = document.createElement("output");
-    output.id = id + "_o";
-    output.value = (+value).toFixed(2);
 
+    const numInput = document.createElement("input");
+    numInput.type = "number";
+    numInput.id = id + "_o";
+    numInput.className = "value-input";
+    numInput.min = String(min);
+    numInput.max = String(max);
+    numInput.step = String(step);
+    numInput.value = (+value).toFixed(2);
+
+    // Slider input event
     input.addEventListener("input", () => {
       const v = +input.value;
-      output.value = v.toFixed(2);
+      numInput.value = v.toFixed(2);
       onInput(v);
     });
+
+    // Number input event
+    numInput.addEventListener("input", () => {
+      const val = parseFloat(numInput.value);
+      if (!isNaN(val)) {
+        const clamped = Math.max(min, Math.min(max, val));
+        input.value = String(clamped);
+        onInput(clamped);
+      }
+    });
+
+    numInput.addEventListener("blur", () => {
+      const v = +input.value;
+      numInput.value = v.toFixed(2);
+    });
+
+    // Slider wheel event
     input.addEventListener(
       "wheel",
       (e) => {
@@ -529,7 +703,7 @@
         newVal = Math.max(parseFloat(input.min), Math.min(parseFloat(input.max), newVal));
         input.value = String(newVal);
         const v = +input.value;
-        output.value = v.toFixed(2);
+        numInput.value = v.toFixed(2);
         onInput(v);
       },
       { passive: false }
@@ -537,7 +711,7 @@
 
     row.appendChild(label);
     row.appendChild(input);
-    row.appendChild(output);
+    row.appendChild(numInput);
     content.appendChild(row);
   }
 
@@ -989,6 +1163,25 @@
 
     requestAnimationFrame(step);
   }
+
+  // ============================================================
+  // KEYBOARD SHORTCUTS
+  // ============================================================
+  document.addEventListener("keydown", (e) => {
+    // Space: pause/resume
+    if (e.code === "Space") {
+      e.preventDefault();
+      paused = !paused;
+      el("pause").textContent = paused ? "재생" : "일시정지";
+    }
+
+    // Alt+Z: reset
+    if (e.altKey && e.code === "KeyZ") {
+      e.preventDefault();
+      initAll();
+      C = 0.0;
+    }
+  });
 
   console.log(`[${BUILD}] demo booted`);
   requestAnimationFrame(step);

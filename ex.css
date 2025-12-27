@@ -1,0 +1,907 @@
+/* ============================================================================
+   Hydrothermal Vent Simulation - Glassmorphism Space Theme
+   ============================================================================ */
+
+:root {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #e8eef2;
+
+  /* 검정 배경 */
+  background: #000000;
+  background-attachment: fixed;
+
+  /* 글라스모피즘 컬러 팔레트 */
+  --glass-bg: rgba(18, 26, 37, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --accent-blue: #8ab4f8;
+  --accent-purple: #b794f6;
+  --glow-blue: rgba(138, 180, 248, 0.5);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   좌측 사이드바: 컨트롤 패널
+   ============================================================================ */
+
+#controls-sidebar {
+  padding: 16px;
+  background: rgba(15, 22, 33, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--glass-border);
+  box-sizing: border-box;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#controls-sidebar h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(138, 180, 248, 0.3);
+}
+
+#controls-sidebar .subtitle {
+  font-size: 11px;
+  color: rgba(232, 238, 242, 0.5);
+  margin-bottom: 16px;
+  display: block;
+}
+
+/* 커스텀 스크롤바 */
+#controls-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+#controls-sidebar::-webkit-scrollbar-track {
+  background: rgba(10, 15, 22, 0.5);
+}
+
+#controls-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(138, 180, 248, 0.3);
+  border-radius: 4px;
+}
+
+#controls-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 180, 248, 0.5);
+}
+
+/* ============================================================================
+   섹션 스타일 (글라스모피즘)
+   ============================================================================ */
+
+.section {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.section:hover {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(138, 180, 248, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.controls-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============================================================================
+   버튼 스타일
+   ============================================================================ */
+
+button, select {
+  padding: 8px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: rgba(27, 38, 54, 0.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  color: #e8eef2;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+button:hover, select:hover {
+  background: rgba(36, 50, 72, 0.8);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 15px var(--glow-blue);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.btn {
+  flex: 1;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, rgba(138, 180, 248, 0.3), rgba(183, 148, 246, 0.3));
+}
+
+.btn-secondary {
+  background: rgba(50, 60, 80, 0.5);
+}
+
+select {
+  width: 100%;
+  margin-top: 4px;
+}
+
+select:focus {
+  outline: none;
+  box-shadow: 0 0 20px var(--glow-blue);
+  border-color: rgba(138, 180, 248, 0.8);
+}
+
+/* ============================================================================
+   파라미터 패널 (Collapsible)
+   ============================================================================ */
+
+.parameter-panel {
+  margin-bottom: 12px;
+}
+
+.parameter-panel h3 {
+  margin: 0 0 8px 0;
+  padding: 10px 12px;
+  background: rgba(30, 42, 59, 0.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.parameter-panel h3:hover {
+  background: rgba(30, 42, 59, 0.8);
+  box-shadow: 0 0 15px rgba(138, 180, 248, 0.3);
+  border-color: rgba(138, 180, 248, 0.3);
+}
+
+.parameter-panel h3 .toggle {
+  display: inline-block;
+  width: 16px;
+  font-size: 11px;
+  transition: transform 0.2s ease;
+  margin-right: 4px;
+}
+
+.parameter-panel.collapsed h3 .toggle {
+  transform: rotate(0deg);
+}
+
+.parameter-panel.expanded h3 .toggle {
+  transform: rotate(90deg);
+}
+
+.parameter-panel .panel-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.parameter-panel.collapsed .panel-content {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* ============================================================================
+   파라미터 컨트롤
+   ============================================================================ */
+
+.parameter-control {
+  margin-bottom: 12px;
+}
+
+.parameter-control label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: rgba(232, 238, 242, 0.9);
+}
+
+.parameter-control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ============================================================================
+   슬라이더 스타일
+   ============================================================================ */
+
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  background: rgba(50, 60, 80, 0.5);
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--accent-blue);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px var(--glow-blue);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #a0c8ff;
+  box-shadow: 0 0 20px var(--glow-blue);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--accent-blue);
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px var(--glow-blue);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #a0c8ff;
+  box-shadow: 0 0 20px var(--glow-blue);
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+/* ============================================================================
+   Number Input 스타일
+   ============================================================================ */
+
+input[type="number"].value-input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  background: rgba(27, 38, 54, 0.6);
+  color: #e8eef2;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  text-align: center;
+}
+
+input[type="number"].value-input:focus {
+  outline: none;
+  box-shadow: 0 0 15px var(--glow-blue);
+  border-color: var(--accent-blue);
+}
+
+input[type="number"].value-input:hover {
+  background: rgba(36, 50, 72, 0.7);
+  border-color: rgba(138, 180, 248, 0.5);
+}
+
+/* Hide spinner for number inputs */
+input[type="number"].value-input::-webkit-outer-spin-button,
+input[type="number"].value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"].value-input {
+  -moz-appearance: textfield;
+}
+
+/* ============================================================================
+   캔버스 컨테이너 및 오버레이
+   ============================================================================ */
+
+#canvas-container {
+  position: relative;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  display: block;
+  max-width: min(100vh, calc(100vw - 320px));
+  max-height: 100vh;
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+}
+
+.selection-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.selection-tether {
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+
+.selection-marker {
+  fill: rgba(255, 255, 255, 0.15);
+  stroke: rgba(255, 255, 255, 0.95);
+  stroke-width: 2;
+}
+
+.entity-modal {
+  position: absolute;
+  z-index: 60;
+  min-width: 220px;
+  width: 260px;
+  min-height: 140px;
+  background: rgba(15, 22, 33, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  color: #e8eef2;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+.entity-modal.hidden {
+  display: none;
+}
+
+.entity-modal-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--glass-border);
+  cursor: move;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(138, 180, 248, 0.06);
+  border-radius: 12px 12px 0 0;
+  user-select: none;
+}
+
+.entity-modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+.entity-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.entity-modal-close:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+.entity-modal-body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.entity-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.entity-kv span:first-child {
+  color: rgba(232, 238, 242, 0.65);
+}
+
+.entity-kv span:last-child {
+  color: rgba(232, 238, 242, 0.95);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.entity-modal-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, rgba(138, 180, 248, 0.35) 50%, rgba(138, 180, 248, 0.35) 100%);
+  border-bottom-right-radius: 12px;
+}
+
+.canvas-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 12px 16px;
+  background: rgba(15, 22, 33, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  gap: 20px;
+  pointer-events: none;
+}
+
+.overlay-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.overlay-label {
+  color: rgba(232, 238, 242, 0.7);
+  font-size: 12px;
+}
+
+.overlay-value {
+  color: var(--accent-blue);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* ============================================================================
+   단축키 힌트
+   ============================================================================ */
+
+.shortcuts-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  padding: 10px 14px;
+  background: rgba(15, 22, 33, 0.75);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  font-size: 11px;
+  color: rgba(232, 238, 242, 0.6);
+  line-height: 1.6;
+  pointer-events: none;
+}
+
+.shortcuts-hint kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(138, 180, 248, 0.15);
+  border: 1px solid rgba(138, 180, 248, 0.3);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--accent-blue);
+  margin: 0 2px;
+}
+
+/* ============================================================================
+   에러 메시지
+   ============================================================================ */
+
+.hidden {
+  display: none;
+}
+
+#error-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(30, 38, 54, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 40px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--glass-border);
+  z-index: 1000;
+}
+
+#error-message h2 {
+  color: #ff6b6b;
+  margin-bottom: 15px;
+  font-size: 24px;
+}
+
+#error-message p {
+  color: #e8eef2;
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   반응형 (모바일)
+   ============================================================================ */
+
+@media (max-width: 900px) {
+  body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  #controls-sidebar {
+    height: auto;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  #canvas-container canvas {
+    height: 60vh;
+  }
+
+  .canvas-overlay {
+    top: 8px;
+    right: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .shortcuts-hint {
+    display: none;
+  }
+}
+
+/* ============================================================================
+   Sidebar Toggle
+   ============================================================================ */
+
+#controls-sidebar.sidebar-hidden {
+  transform: translateX(calc(-100% + 40px));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#controls-sidebar.sidebar-hidden:hover {
+  transform: translateX(calc(-100% + 60px));
+}
+
+#controls-sidebar.sidebar-visible {
+  transform: translateX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-toggle-btn {
+  z-index: 10;
+  position: relative;
+  height: 28px;
+  width: 36px;
+  padding: 0 !important;
+  font-size: 14px !important;
+  font-weight: normal;
+  background: rgba(27, 38, 54, 0.6) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: #e8eef2 !important;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(138, 180, 248, 0.2) !important;
+  border-color: rgba(138, 180, 248, 0.3) !important;
+  box-shadow: 0 0 8px rgba(138, 180, 248, 0.2);
+}
+
+/* ============================================================================
+   Floating Chart Modal
+   ============================================================================ */
+
+.chart-modal {
+  position: fixed;
+  background: rgba(15, 22, 33, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  min-width: 400px;
+  min-height: 300px;
+  width: 433px;
+  height: 803px;
+  top: 75.5px;
+  left: 62px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-modal.hidden {
+  display: none;
+}
+
+.chart-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--glass-border);
+  cursor: move;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(138, 180, 248, 0.05);
+  border-radius: 12px 12px 0 0;
+  user-select: none;
+}
+
+.chart-modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+.chart-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.chart-modal-close:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+.chart-modal-body {
+  flex: 1;
+  padding: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-modal-body canvas {
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-modal-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, rgba(138, 180, 248, 0.3) 50%, rgba(138, 180, 248, 0.3) 100%);
+  border-bottom-right-radius: 12px;
+}
+
+/* ============================================================================
+   Batch Run Modal
+   ============================================================================ */
+
+.batch-modal {
+  position: fixed;
+  background: rgba(15, 22, 33, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  min-width: 520px;
+  min-height: 420px;
+  width: 780px;
+  height: 720px;
+  top: 85px;
+  left: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.batch-modal.hidden {
+  display: none;
+}
+
+.batch-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--glass-border);
+  cursor: move;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(138, 180, 248, 0.05);
+  border-radius: 12px 12px 0 0;
+  user-select: none;
+}
+
+.batch-modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+.batch-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.batch-modal-close:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+.batch-modal-body {
+  flex: 1;
+  padding: 14px 16px 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.batch-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.batch-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(232, 238, 242, 0.85);
+}
+
+.batch-input {
+  padding: 8px 10px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: rgba(27, 38, 54, 0.6);
+  color: #e8eef2;
+  font-size: 12px;
+}
+
+.batch-buttons {
+  grid-column: 1 / span 2;
+  display: flex;
+  gap: 8px;
+}
+
+.batch-buttons .btn {
+  flex: 1;
+}
+
+.batch-progress-row {
+  grid-column: 1 / span 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.batch-progress {
+  flex: 1;
+  height: 10px;
+  background: rgba(50, 60, 80, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.batch-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(138, 180, 248, 0.85), rgba(183, 148, 246, 0.85));
+  transition: width 0.15s linear;
+}
+
+.batch-progress-text {
+  min-width: 180px;
+  font-size: 12px;
+  color: rgba(232, 238, 242, 0.75);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.batch-chart {
+  flex: 1;
+  background: rgba(10, 15, 22, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.batch-chart canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.batch-modal-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, rgba(138, 180, 248, 0.3) 50%, rgba(138, 180, 248, 0.3) 100%);
+  border-bottom-right-radius: 12px;
+}

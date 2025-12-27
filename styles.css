@@ -52,6 +52,42 @@ body {
   font-size: 12px;
   color: #fff;
 }
+
+/* Number input for direct value entry */
+input[type="number"].value-input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid #2b2b45;
+  border-radius: 6px;
+  background: rgba(27, 27, 39, 0.6);
+  color: #fff;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="number"].value-input:focus {
+  outline: none;
+  box-shadow: 0 0 15px rgba(138, 180, 248, 0.5);
+  border-color: #8ab4f8;
+}
+
+input[type="number"].value-input:hover {
+  background: rgba(36, 36, 51, 0.7);
+  border-color: rgba(138, 180, 248, 0.5);
+}
+
+/* Hide spinner for number inputs */
+input[type="number"].value-input::-webkit-outer-spin-button,
+input[type="number"].value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"].value-input {
+  -moz-appearance: textfield;
+}
 .btns {
   display: flex;
   gap: 8px;
