@@ -193,6 +193,7 @@
   // MODE STATE
   // ============================================================
   let currentMode = "struct";
+  let rdFreezePrevOnAdd = true;
 
   function createPingPong(tex0, tex1) {
     return {
@@ -409,6 +410,9 @@
     const cStat = el("cStat");
     if (cStat) cStat.style.display = currentMode === "struct" ? "" : "none";
 
+    const rdControls = el("rdControls");
+    if (rdControls) rdControls.style.display = currentMode === "rd" ? "" : "none";
+
     if (currentMode !== "struct") {
       C = 0.0;
     }
@@ -449,7 +453,7 @@
     }
 
     const prev = rdStages[rdStages.length - 1];
-    prev.frozen = true;
+    if (rdFreezePrevOnAdd) prev.frozen = true;
 
     const stageId = rdStages.length;
     const yName = String.fromCharCode(99 + (stageId - 1)); // c,d,e
@@ -828,6 +832,30 @@
   buildLayerUI();
   updateVisualizationDropdowns();
   updateModeUI();
+
+  // ============================================================
+  // RD OPTIONS
+  // ============================================================
+  function applyFreezePolicyToExistingStages() {
+    if (rdFreezePrevOnAdd) {
+      for (let i = 0; i < rdStages.length - 1; i++) rdStages[i].frozen = true;
+      if (rdStages.length > 0) rdStages[rdStages.length - 1].frozen = false;
+    } else {
+      for (const s of rdStages) s.frozen = false;
+    }
+  }
+
+  const rdFreezeEl = el("rdFreezeOnAdd");
+  if (rdFreezeEl) {
+    rdFreezeEl.checked = rdFreezePrevOnAdd;
+    rdFreezeEl.addEventListener("change", () => {
+      rdFreezePrevOnAdd = !!rdFreezeEl.checked;
+      applyFreezePolicyToExistingStages();
+      initAll();
+      C = 0.0;
+      buildLayerUI();
+    });
+  }
 
   // ============================================================
   // MAIN LOOP
